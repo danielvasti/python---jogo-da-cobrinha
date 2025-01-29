@@ -12,6 +12,7 @@ def game_loop(window):
     current_direction = curses.KEY_DOWN
     snake_ate_fruit = False
     
+    
     while True:
         draw_screen(window=window)
         draw_snake(snake=snake, window=window)
@@ -19,8 +20,12 @@ def game_loop(window):
         direction = get_new_direction(window=window, timeout=1000)
         if direction is None:
             direction = current_direction
+        if direction_is_opposite(current_direction=current_direction, direction=direction):
+            direction = current_direction
         move_snake(snake=snake, direction=direction,snake_ate_fruit=snake_ate_fruit)
         if snake_hit_border(snake=snake, window=window):
+            return
+        if snake_hit_itself(snake=snake):
             return
         if snake_hit_fruit(snake=snake, fruit=fruit):
             snake_ate_fruit = True
@@ -28,6 +33,17 @@ def game_loop(window):
         else:
             snake_ate_fruit = False
         current_direction = direction
+
+def direction_is_opposite(current_direction, direction):
+    match direction:
+        case curses.KEY_UP:
+            return current_direction == curses.KEY_DOWN
+        case curses.KEY_DOWN:
+            return current_direction == curses.KEY_UP
+        case curses.KEY_LEFT:
+            return current_direction == curses.KEY_RIGHT
+        case curses.KEY_RIGHT:
+            return current_direction == curses.KEY_LEFT
 
 def get_new_fruit(window):
     height, width = window.getmaxyx()
@@ -46,6 +62,11 @@ def snake_hit_border(snake, window):
 
 def snake_hit_fruit(snake, fruit):
     return fruit in snake
+
+def snake_hit_itself(snake):
+    head = snake[0]
+    body = snake[1:]
+    return head in body
 
 def draw_screen(window):
     window.clear()  # Clear the screen first
