@@ -1,7 +1,8 @@
 import curses
 import random
+import time
 
-def game_loop(window):
+def game_loop(window, game_speed):
     #setup inicial
     curses.curs_set(0)
     snake = [[10, 15],
@@ -11,28 +12,40 @@ def game_loop(window):
     fruit = get_new_fruit(window=window)
     current_direction = curses.KEY_DOWN
     snake_ate_fruit = False
-    
+    score = 0
     
     while True:
         draw_screen(window=window)
         draw_snake(snake=snake, window=window)
         draw_actor(actor=fruit, window=window, char=curses.ACS_DIAMOND)
-        direction = get_new_direction(window=window, timeout=1000)
+        direction = get_new_direction(window=window, timeout=game_speed)
         if direction is None:
             direction = current_direction
         if direction_is_opposite(current_direction=current_direction, direction=direction):
             direction = current_direction
-        move_snake(snake=snake, direction=direction,snake_ate_fruit=snake_ate_fruit)
+        move_snake(snake=snake, direction=direction, snake_ate_fruit=snake_ate_fruit)
         if snake_hit_border(snake=snake, window=window):
-            return
+            break
         if snake_hit_itself(snake=snake):
-            return
+            break
         if snake_hit_fruit(snake=snake, fruit=fruit):
             snake_ate_fruit = True
             fruit = get_new_fruit(window=window)
+            score += 1
         else:
             snake_ate_fruit = False
         current_direction = direction
+
+    finish_game(window=window, score=score)
+
+def finish_game(window, score):
+    height, width = window.getmaxyx()
+    s = f'Tu perdeu! Pontuação: {score}'
+    y = int(height / 2)
+    x = int((width - len(s)) / 2)
+    window.addstr(y, x, s)
+    window.refresh()
+    time.sleep(2)  # Wait for 2 seconds before exiting the game
 
 def direction_is_opposite(current_direction, direction):
     match direction:
@@ -112,6 +125,14 @@ def actor_hit_border(actor, window):
         return True
     return False
 
+def select_difficulty():
+    difficulty = {'1': 1000, '2': 500, '3': 150, '4': 90, '5': 35}
+    while True:
+        answer = input('Selecione a dificuldade de 1 a 5:')
+        game_speed = difficulty.get(answer)
+        if game_speed is not None:
+            return game_speed
+        print('Dificuldade inválida. Tente novamente.')  
+
 if __name__ == '__main__':
-    curses.wrapper(game_loop)
-    print('Fim do jogo')
+    curses.wrapper(game_loop, select_difficulty())
